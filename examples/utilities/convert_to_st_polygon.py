@@ -1,6 +1,6 @@
 """ Simple utility used to convert GeoJSON polygon features into
-ST_Polygon strings that can be used in an Athena PostGis query. Run directly
-from command line, e.g.:
+ST_Polygon strings in Well-Known Text format that can be used in an
+Athena PostGIS query. Run directly from command line, e.g.:
 
 python convert_to_st_polygon.py (if relying on file constant in script), or
 python convert_to_st_polygon.py --file <file name> (if passing file as argument).
