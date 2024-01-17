@@ -1,0 +1,460 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: 'CloudFormation stack to demonstration integration of Amazon Location Service with AWS data analytics services.'
+
+Globals:
+  Function:
+    Runtime: python3.11
+    MemorySize: 512
+    Timeout: 15
+
+Parameters:
+  LambdaS3Prefix:
+    Description: Output bucket prefix for Lambda function to save device positions (without leading or trailing /).
+    Type: String
+    Default: device-position/lambda
+    ConstraintDescription: Valid S3 bucket prefix.
+  FirehoseS3Prefix:
+    Description: Output bucket prefix for Kinesis Data Firehose to save device positions (without leading or trailing /).
+    Type: String
+    Default: device-position/firehose
+    ConstraintDescription: Valid S3 bucket prefix.
+  SimulationIntervalMinutes:
+    Description: Number of minutes between executions of the device simulation function.
+    Type: Number
+    Default: 15
+    MinValue: 15
+Resources:
+  # AWS resources for ingesting, processing and storing location data.
+  ProcessDevicePositionS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+  ProcessDevicePositionEventRule:
+    Type: AWS::Events::Rule
+    Properties:
+      EventPattern:
+        source:
+          - aws.geo
+        detail-type:
+          - Location Device Position Event
+      Name:
+        Fn::Sub: ProcessDevicePosition-${AWS::StackName}
+      State: ENABLED
+      Targets:
+        - Id:
+            Fn::Sub: ProcessDevicePositionLambda-${AWS::StackName}
+          Arn:
+            Fn::Sub: ${ProcessDevicePositionLambda.Arn}
+          InputTransformer:
+            InputPathsMap:
+              EventType: $.detail.EventType
+              TrackerName: $.detail.TrackerName
+              DeviceId: $.detail.DeviceId
+              SampleTime: $.detail.SampleTime
+              ReceivedTime: $.detail.ReceivedTime
+              Longitude: $.detail.Position[0]
+              Latitude: $.detail.Position[1]
+            InputTemplate: >
+              {"EventType":<EventType>,"TrackerName":<TrackerName>,"DeviceId":<DeviceId>,"SampleTime":<SampleTime>,"ReceivedTime":<ReceivedTime>,"Position":[<Latitude>, <Longitude>]}
+        - Id:
+            Fn::Sub: ProcessDevicePositionFirehose-${AWS::StackName}
+          Arn:
+            Fn::Sub: ${ProcessDevicePositionFirehose.Arn}
+          RoleArn:
+            Fn::Sub: ${ProcessDevicePositionEventBridgeFirehoseTargetRole.Arn}
+          InputTransformer:
+            InputPathsMap:
+              EventType: $.detail.EventType
+              TrackerName: $.detail.TrackerName
+              DeviceId: $.detail.DeviceId
+              SampleTime: $.detail.SampleTime
+              ReceivedTime: $.detail.ReceivedTime
+              Longitude: $.detail.Position[0]
+              Latitude: $.detail.Position[1]
+            InputTemplate: >
+              {"EventType":<EventType>,"TrackerName":<TrackerName>,"DeviceId":<DeviceId>,"SampleTime":<SampleTime>,"ReceivedTime":<ReceivedTime>,"Position":[<Latitude>, <Longitude>]}
+  ProcessDevicePositionLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: './process-data/'
+      Description: Function to process device position data sent by EventBridge.
+      FunctionName:
+        Fn::Sub: ProcessDevicePosition-${AWS::StackName}
+      Handler: lambda_handler.lambda_handler
+      Role:
+        Fn::Sub: ${ProcessDevicePositionLambdaRole.Arn}
+      Runtime: python3.11
+      MemorySize: 256
+      Timeout: 60
+      ReservedConcurrentExecutions: 10
+      Environment:
+        Variables:
+          S3_BUCKET_NAME:
+            Ref: ProcessDevicePositionS3Bucket
+          S3_BUCKET_PREFIX:
+            Ref: LambdaS3Prefix
+          DYNAMODB_TABLE:
+            Ref: ProcessDevicePositionVehicleMaintenanceTable
+  ProcessDevicePositionLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: '/aws/lambda/ProcessDevicePosition-${AWS::StackName}'
+      RetentionInDays: 7
+  ProcessDevicePositionLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName:
+            Fn::Sub: ProcessDevicePositionLambda-${AWS::StackName}-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource:
+                  - Fn::Sub: ${ProcessDevicePositionS3Bucket.Arn}
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                Resource:
+                  - Fn::Sub: ${ProcessDevicePositionS3Bucket.Arn}/${LambdaS3Prefix}/*
+              - Effect: 'Allow'
+                Action:
+                  - 'logs:CreateLogGroup'
+                Resource:
+                  Fn::Sub: 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:*'
+              - Effect: Allow
+                Action:
+                  - dynamodb:GetItem
+                  - dynamodb:Scan
+                  - dynamodb:Query
+                Resource:
+                  Fn::Sub: ${ProcessDevicePositionVehicleMaintenanceTable.Arn}
+              - Effect: 'Allow'
+                Action:
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource:
+                  Fn::Sub: 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/ProcessDevicePosition-${AWS::StackName}:*'
+  ProcessDevicePositionLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      FunctionName:
+        Ref: ProcessDevicePositionLambda
+      SourceArn:
+        Fn::Sub: ${ProcessDevicePositionEventRule.Arn}
+  ProcessDevicePositionVehicleMaintenanceTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: 'PAY_PER_REQUEST'
+      SSESpecification:
+        SSEEnabled: true
+      AttributeDefinitions:
+        - AttributeName: DeviceId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: DeviceId
+          KeyType: HASH
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+  ProcessDevicePositionEventBridgeFirehoseTargetRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - events.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName:
+            Fn::Sub: ProcessDeviceEventBridgeFirehoseTarget-${AWS::StackName}-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - firehose:PutRecord
+                  - firehose:PutRecords
+                Resource:
+                  - Fn::Sub: ${ProcessDevicePositionFirehose.Arn}
+  ProcessDevicePositionFirehose:
+    Type: AWS::KinesisFirehose::DeliveryStream
+    Properties:
+      DeliveryStreamName:
+        Fn::Sub: ProcessDevicePositionFirehose-${AWS::StackName}
+      DeliveryStreamType: DirectPut
+      DeliveryStreamEncryptionConfigurationInput:
+        KeyType: AWS_OWNED_CMK
+      ExtendedS3DestinationConfiguration:
+        BucketARN:
+          Fn::Sub: ${ProcessDevicePositionS3Bucket.Arn}
+        Prefix:
+          Fn::Sub: ${FirehoseS3Prefix}/!{partitionKeyFromQuery:DeviceId}/
+        ErrorOutputPrefix:
+          Fn::Sub: ${FirehoseS3Prefix}-errors/!{firehose:error-output-type}/
+        BufferingHints:
+          IntervalInSeconds: 60
+        CompressionFormat: GZIP
+        RoleARN:
+          Fn::Sub: ${ProcessDevicePositionFirehoseRole.Arn}
+        DynamicPartitioningConfiguration:
+          Enabled: true
+        ProcessingConfiguration:
+          Enabled: true
+          Processors:
+            - Type: MetadataExtraction
+              Parameters:
+                - ParameterName: MetadataExtractionQuery
+                  ParameterValue: "{DeviceId:.DeviceId}"
+                - ParameterName: JsonParsingEngine
+                  ParameterValue: JQ-1.6
+            - Type: AppendDelimiterToRecord
+              Parameters:
+                - ParameterName: Delimiter
+                  ParameterValue: \\n
+  ProcessDevicePositionFirehoseRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - firehose.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName:
+            Fn::Sub: ProcessDevicePositionFirehose-${AWS::StackName}-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:ListBucket
+                Resource:
+                  - Fn::Sub: ${ProcessDevicePositionS3Bucket.Arn}
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                Resource:
+                  - Fn::Sub: ${ProcessDevicePositionS3Bucket.Arn}/${FirehoseS3Prefix}/*
+                  - Fn::Sub: ${ProcessDevicePositionS3Bucket.Arn}/${FirehoseS3Prefix}-errors/*
+  # Data generation / simulation resources.
+  GenerateDevicePositionTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: 'PAY_PER_REQUEST'
+      SSESpecification:
+        SSEEnabled: true
+      AttributeDefinitions:
+        - AttributeName: DeviceId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: DeviceId
+          KeyType: HASH
+      PointInTimeRecoverySpecification:
+        PointInTimeRecoveryEnabled: true
+  GenerateDevicePositionLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: './generate-data/'
+      Description: Function to randomly generate device positions
+      FunctionName:
+        Fn::Sub: GenerateDevicePosition-${AWS::StackName}
+      Handler: lambda_handler.lambda_handler
+      Role:
+        Fn::Sub: ${GenerateDevicePositionLambdaRole.Arn}
+      Runtime: python3.11
+      MemorySize: 256
+      Timeout: 60
+      ReservedConcurrentExecutions: 10
+      Environment:
+        Variables:
+          TRACKER_NAME:
+            Ref: GenerateDevicePositionDeviceTracker
+          TABLE_NAME:
+            Ref: GenerateDevicePositionTable
+  GenerateDevicePositionLambdaLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: '/aws/lambda/GenerateDevicePosition-${AWS::StackName}'
+      RetentionInDays: 7
+  GenerateDevicePositionLambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Policies:
+        - PolicyName:
+            Fn::Sub: GenerateDevicePositionLambda-${AWS::StackName}-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - geo:BatchUpdateDevicePosition
+                Resource:
+                  - Fn::Sub: ${GenerateDevicePositionDeviceTracker.Arn}
+              - Effect: Allow
+                Action:
+                  - dynamodb:PutItem
+                  - dynamodb:DeleteItem
+                  - dynamodb:UpdateItem
+                  - dynamodb:GetItem
+                  - dynamodb:Scan
+                  - dynamodb:Query
+                Resource:
+                  Fn::Sub: ${GenerateDevicePositionTable.Arn}
+              - Effect: 'Allow'
+                Action:
+                  - 'logs:CreateLogGroup'
+                Resource:
+                  Fn::Sub: 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:*'
+              - Effect: 'Allow'
+                Action:
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource:
+                  Fn::Sub: 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/lambda/GenerateDevicePosition-${AWS::StackName}:*'
+  GenerateDevicePositionLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      Action: lambda:InvokeFunction
+      Principal: events.amazonaws.com
+      FunctionName:
+        Ref: GenerateDevicePositionLambda
+      SourceArn:
+        Fn::Sub: ${GenerateDevicePositionScheduleRule.Arn}
+  GenerateDevicePositionScheduleRule:
+    Type: AWS::Events::Rule
+    Properties:
+      ScheduleExpression:
+        Fn::Sub: cron(0/${SimulationIntervalMinutes} * * * ? *)
+      State: ENABLED
+      Targets:
+        - Arn:
+            Fn::Sub: ${GenerateDevicePositionLambda.Arn}
+          Id:
+            Fn::Sub: GenerateDevicePosition-${AWS::StackName}
+  # Amazon Location Service resources.
+  GenerateDevicePositionDeviceTracker:
+    Type: AWS::Location::Tracker
+    Properties:
+      PositionFiltering: DistanceBased
+      TrackerName:
+        Fn::Sub: ProcessDevicePosition-${AWS::StackName}-Tracker
+      EventBridgeEnabled: true
+  # AWS data analytics resources.
+  AnalyzePositionGlueDatabase:
+    Type: AWS::Glue::Database
+    Properties:
+      CatalogId:
+        Fn::Sub: ${AWS::AccountId}
+      DatabaseInput:
+        Name:
+          Fn::Sub: location-analytics-glue-database
+        Description:
+          Fn::Sub: Location analytics Glue database ${AWS::StackName}
+  AnalyzePositionGlueCrawlerRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - glue.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSGlueServiceRole
+      Policies:
+        - PolicyName:
+            Fn::Sub: AnalyzePositionGlueCrawlerRole-${AWS::StackName}-policy
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                Resource:
+                  - Fn::Sub: ${ProcessDevicePositionS3Bucket.Arn}/${FirehoseS3Prefix}/*
+                  - Fn::Sub: ${ProcessDevicePositionS3Bucket.Arn}/${LambdaS3Prefix}/*
+  AnalyzePositionGlueCrawlerFirehose:
+    Type: AWS::Glue::Crawler
+    Properties:
+      DatabaseName:
+        Ref: AnalyzePositionGlueDatabase
+      Description:
+        Fn::Sub: Location analytics Glue crawler for Firehose - ${AWS::StackName}
+      Name: location-analytics-glue-crawler-firehose
+      Role:
+        Fn::Sub: ${AnalyzePositionGlueCrawlerRole.Arn}
+      Targets:
+        S3Targets:
+          - Path:
+              Fn::Sub: ${ProcessDevicePositionS3Bucket}/${FirehoseS3Prefix}/
+      SchemaChangePolicy:
+        UpdateBehavior: UPDATE_IN_DATABASE
+        DeleteBehavior: LOG
+  AnalyzePositionGlueCrawlerLambda:
+    Type: AWS::Glue::Crawler
+    Properties:
+      DatabaseName:
+        Ref: AnalyzePositionGlueDatabase
+      Description:
+        Fn::Sub: Location analytics Glue crawler for Lambda - ${AWS::StackName}
+      Name: location-analytics-glue-crawler-lambda
+      Role:
+        Fn::Sub: ${AnalyzePositionGlueCrawlerRole.Arn}
+      Targets:
+        S3Targets:
+          - Path:
+              Fn::Sub: ${ProcessDevicePositionS3Bucket}/${LambdaS3Prefix}/
+      SchemaChangePolicy:
+        UpdateBehavior: UPDATE_IN_DATABASE
+        DeleteBehavior: LOG
+
+Outputs:
+  LocationDataS3Bucket:
+    Description: S3 bucket name for location data.
+    Value:
+      Ref: ProcessDevicePositionS3Bucket
+  VehicleMaintenanceDynamoTable:
+    Description: DynamoDB table for vehicle maintenance table.
+    Value:
+      Ref: ProcessDevicePositionVehicleMaintenanceTable
