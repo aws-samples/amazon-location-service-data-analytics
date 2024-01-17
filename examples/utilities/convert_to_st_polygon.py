@@ -2,7 +2,8 @@
 ST_Polygon strings that can be used in an Athena PostGis query. Run directly
 from command line, e.g.:
 
-python convert_to_st_polygon.py
+python convert_to_st_polygon.py (if relying on file constant in script), or
+python convert_to_st_polygon.py --file <file name> (if passing file as argument).
 
 Output is printed directly in the console (which can be copied and pasted). Note that
 if there are multiple features, they will print across multiple lines. """
@@ -14,13 +15,21 @@ if there are multiple features, they will print across multiple lines. """
 
 import json
 import logging
+import argparse
 
 # Set up Python logging.
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-# GeoJSON file location.
+# GeoJSON file location. Superseded by argument if provided.
 GEOJSON_FILE = "../Ultra_Low_Emissions_Zone_Expansion.json"
+
+# Accept arguments. Takes precedence if provided.
+parser = argparse.ArgumentParser()
+parser.add_argument("-f", "--file", dest="inputFile", help="Path to GeoJSON file")
+args = parser.parse_args()
+if args.inputFile:
+    GEOJSON_FILE = args.inputFile
 
 # pylint: disable=too-many-nested-blocks
 def main():
