@@ -60,7 +60,7 @@ Resources:
               Longitude: $.detail.Position[0]
               Latitude: $.detail.Position[1]
             InputTemplate: >
-              {"EventType":<EventType>,"TrackerName":<TrackerName>,"DeviceId":<DeviceId>,"SampleTime":<SampleTime>,"ReceivedTime":<ReceivedTime>,"Position":[<Latitude>, <Longitude>]}
+              {"EventType":<EventType>,"TrackerName":<TrackerName>,"DeviceId":<DeviceId>,"SampleTime":<SampleTime>,"ReceivedTime":<ReceivedTime>,"Position":[<Longitude>, <Latitude>]}
         - Id:
             Fn::Sub: ProcessDevicePositionFirehose-${AWS::StackName}
           Arn:
@@ -77,7 +77,7 @@ Resources:
               Longitude: $.detail.Position[0]
               Latitude: $.detail.Position[1]
             InputTemplate: >
-              {"EventType":<EventType>,"TrackerName":<TrackerName>,"DeviceId":<DeviceId>,"SampleTime":<SampleTime>,"ReceivedTime":<ReceivedTime>,"Position":[<Latitude>, <Longitude>]}
+              {"EventType":<EventType>,"TrackerName":<TrackerName>,"DeviceId":<DeviceId>,"SampleTime":<SampleTime>,"ReceivedTime":<ReceivedTime>,"Position":[<Longitude>, <Latitude>]}
   ProcessDevicePositionLambda:
     Type: AWS::Serverless::Function
     Properties:
