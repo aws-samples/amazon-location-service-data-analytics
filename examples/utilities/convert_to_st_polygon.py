@@ -1,6 +1,11 @@
 """ Simple utility used to convert GeoJSON polygon features into
 ST_Polygon strings that can be used in an Athena PostGis query. Run directly
-from command line. Output is printed in the console. """
+from command line, e.g.:
+
+python convert_to_st_polygon.py
+
+Output is printed directly in the console (which can be copied and pasted). Note that
+if there are multiple features, they will print across multiple lines. """
 
 ## Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 ## SPDX-License-Identifier: MIT-0
