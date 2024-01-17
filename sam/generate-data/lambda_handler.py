@@ -68,8 +68,8 @@ def lambda_handler(event, context):
         # [Simulation] Generate random location offsets using base location.
         # Each 0.001 is approximately 111m.
         # Below code will provide max 0.1 variance (11.1km).
-        base_lat = vehicle["base"][0]
-        base_long = vehicle["base"][1]
+        base_long = vehicle["base"][0]
+        base_lat = vehicle["base"][1]
         # Check if record of vehicle exists, and if it has update from today.
         if (
                 (vehicle["name"] in stored_vehicle_locations) and
@@ -78,9 +78,8 @@ def lambda_handler(event, context):
                     now.strftime("%Y-%m-%d")
                 )
             ):
-            base_latlong = json.loads(stored_vehicle_locations[vehicle["name"]]["position"])
-            base_lat = base_latlong[0]
-            base_long = base_latlong[1]
+            base_longlat = json.loads(stored_vehicle_locations[vehicle["name"]]["position"])
+            base_long, base_lat = base_longlat
             logger.info("%s: found record from today.", vehicle["name"])
         else:
             logger.info(
@@ -88,12 +87,12 @@ def lambda_handler(event, context):
                     vehicle["name"]
                 )
         # Randomise location, using offset and random.triangular for variance.
+        random_long = round(
+            (random.triangular(-1000, 0, 1000) / 10000) + base_long,
+            4
+        )
         random_lat = round(
                 (random.triangular(-1000, 0, 1000) / 10000) + base_lat,
-                4
-            )
-        random_long = round(
-                (random.triangular(-1000, 0, 1000) / 10000) + base_long,
                 4
             )
         sample_time = now.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
@@ -110,7 +109,7 @@ def lambda_handler(event, context):
             table.put_item(
                 Item={
                     "DeviceId": vehicle["name"],
-                    "PositionData": str([random_lat, random_long]),
+                    "PositionData": str([random_long, random_lat]),
                     "SampleTime": sample_time
                 }
             )
