@@ -10,10 +10,79 @@ This post shows you how you can use Amazon Location, EventBridge, Lambda, Amazon
 
 ![Solution architecture](images/architecture_diagram_v0.5.png)
 
-Figure 1: Solution architecture
-
 ## AWS Blog post ##
 
 This approach is fully documented in the following blog post:
 
 `TBC`
+
+## Walkthrough ##
+
+### Prerequisites ###
+
+For this walkthrough, you should have the following prerequisites in place:
+
+* An AWS account
+* IAM permissions to deploy the AWS resources using AWS Serverless Application Model (AWS SAM)
+* Local installation of [AWS SAM Command Line Interface (CLI)](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html)
+
+### Deploying the solution ###
+
+* Follow the steps in the [official documentation](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html) to install the latest release of the AWS SAM CLI for your operating system.
+* Once successfully installed, run `sam --version` to return the AWS SAM CLI version.
+
+> Note: The AWS SAM CLI requires appropriate permissions to provision resources in the chosen AWS account. Ensure that [access key and secret access keys](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/prerequisites.html) have been created using IAM, and that aws configure has been used to register them locally on your machine.
+
+To download all required files to your local machine, run the following command.
+
+```
+git clone https://github.com/aws-samples/amazon-location-service-data-analytics
+```
+
+Navigate to the sam directory.
+
+```
+cd sam
+```
+
+Build the SAM application. 
+
+```
+sam build
+```
+
+Confirm that the `Build Succeeded` message is displayed.
+
+![Building and deploying SAM template](images/sam_deployment_step_1.png)
+
+Deploy the application.
+
+```
+sam deploy --guided
+```
+
+When prompted, enter the unique details chosen for your environment. In this example, we have chosen the CloudFormation stack name locationAnalytics and kept the remainder of the options as defaults. CloudFormation parameter `SimulationIntervalMinutes` is the frequency with which simulated device location updates take place (by default, this is every 15 minutes).
+
+```
+Stack Name []:locationAnalytics
+AWS Region [eu-west-1]:
+Parameter LambdaS3Prefix [device-position/lambda]:
+Parameter FirehoseS3Prefix [device-position/firehose]:
+Parameter SimulationIntervalMinutes [15]:
+```
+![Building and deploying SAM template](images/sam_deployment_step_2.png)
+
+Confirm that the Successfully created/updated stack message is shown.
+
+![Building and deploying SAM template](images/sam_deployment_step_3.png)
+
+You are now ready to test the solution.
+
+### Cleaning up ###
+To avoid incurring future charges, delete the CloudFormation stacks that have been provisioned in the AWS account. This can be achieved using:
+
+```
+sam delete
+```
+
+You will be required to empty the S3 bucket before the template can be deleted. The S3 bucket used for location data can be found in the CloudFormation output `LocationDataS3Bucket`.
