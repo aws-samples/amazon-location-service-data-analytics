@@ -89,7 +89,7 @@ Options are explained below:
 
 ![Building and deploying SAM template](images/sam_deployment_step_2.png)
 
-7. Confirm that the Successfully created/updated stack message is shown. Deployment will take approximately 5 minutes.
+7. Confirm that the `Successfully created/updated stack` message is shown. Deployment will take approximately 5 minutes.
 
 ![Building and deploying SAM template](images/sam_deployment_step_3.png)
 
