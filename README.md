@@ -33,35 +33,35 @@ For this walkthrough, you should have the following prerequisites in place:
 
 > Note: The AWS SAM CLI requires appropriate permissions to provision resources in the chosen AWS account. Ensure that [access key and secret access keys](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/prerequisites.html) have been created using IAM, and that aws configure has been used to register them locally on your machine.
 
-To download all required files to your local machine, run the following command.
+1. To download all required files to your local machine, run the following command.
 
 ```
 git clone https://github.com/aws-samples/amazon-location-service-data-analytics
 ```
 
-Navigate to the sam directory.
+2. Navigate to the sam directory.
 
 ```
 cd sam
 ```
 
-Build the SAM application. 
+3. Build the SAM application. 
 
 ```
 sam build
 ```
 
-Confirm that the `Build Succeeded` message is displayed.
+4. Confirm that the `Build Succeeded` message is displayed.
 
 ![Building and deploying SAM template](images/sam_deployment_step_1.png)
 
-Deploy the application.
+5. Deploy the application.
 
 ```
 sam deploy --guided
 ```
 
-When prompted, enter the unique details chosen for your environment. In this example, we have chosen the CloudFormation stack name locationAnalytics and kept the remainder of the options as defaults. CloudFormation parameter `SimulationIntervalMinutes` is the frequency with which simulated device location updates take place (by default, this is every 15 minutes).
+6. When prompted, enter the unique details chosen for your environment. In this example, we have chosen the CloudFormation stack name `locationAnalytics` and kept the remainder of the options as defaults. CloudFormation parameter `SimulationIntervalMinutes` is the frequency with which simulated device location updates take place (by default, this is every 15 minutes).
 
 ```
 Stack Name []:locationAnalytics
@@ -70,13 +70,30 @@ Parameter LambdaS3Prefix [device-position/lambda]:
 Parameter FirehoseS3Prefix [device-position/firehose]:
 Parameter SimulationIntervalMinutes [15]:
 ```
+
+Options are explained below:
+
+| Options                              | Explanation                                                                                                                                                                                                                  | Default                        | Further information                                                                                                                              |
+|--------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| Stack Name                           | The name of the AWS CloudFormation stack that you are deploying to. If you specify an existing stack, then the command updates the stack. If you specify a new stack, then the command creates it.                           |                                | [AWS SAM CLI reference](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-cli-command-reference-sam-deploy.html) |
+| AWS Region                           | The AWS Region to deploy to. For example, `eu-west-1`.                                                                                                                                                                       | Current region set in AWS CLI. | [AWS SAM CLI reference](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-cli-command-reference-sam-deploy.html) |
+| Parameter `LambdaS3Prefix`           | The S3 bucket prefix under which location data objects for the Lambda pattern will be stored.                                                                                                                                | `device-position/lambda`       |                                                                                                                                                  |
+| Parameter `FirehoseS3Prefix`         | The S3 bucket prefix under which location data objects for the Firehose pattern will be stored.                                                                                                                              | `device-position/firehose`     |                                                                                                                                                  |
+| Parameter `SimulationIntervalMinutes` | Number of minutes between executions of the device simulation function.                                                                                                                                                      | `15`                           |                                                                                                                                                  |
+| Confirm changes before deploy [y/N]  | Configures the AWS SAM CLI to display your AWS CloudFormation change set and ask for confirmation before deploying.                                                                                                          | `N`                            | [AWS sam deploy reference](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/using-sam-cli-deploy.html)             |
+| Allow SAM CLI IAM role creation [Y/n] | Allows AWS SAM to create the IAM roles necessary for the solution.                                                                                                                                                           | `Y`                            | [AWS sam deploy reference](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/using-sam-cli-deploy.html)             |
+| Disable rollback [y/N] | Specifies whether to roll back your AWS CloudFormation stack if an error occurs during a deployment. By default, if there's an error during a deployment, your AWS CloudFormation stack rolls back to the last stable state. | `N`                            | [AWS sam deploy reference](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-cli-command-reference-sam-deploy.html) |
+| Save arguments to configuration file [Y/n] | Saves the parameters that you provide at the command line to the AWS SAM configuration file.                                                                                                                                 | `Y`                            | [AWS sam deploy reference](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-cli-command-reference-sam-deploy.html) |
+| SAM configuration file [samconfig.toml] | The path and file name of the configuration file containing default parameter values to use. The default value is `samconfig.toml` in the root of the project directory.                                                     | `samconfig.toml`               | [AWS sam deploy reference](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-cli-command-reference-sam-deploy.html) |
+| SAM configuration environment [default] | The environment name specifying the default parameter values in the configuration file to use. The default value is `default`.                                                                                               | `default`                      | [AWS sam deploy reference](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-cli-command-reference-sam-deploy.html) |
+
 ![Building and deploying SAM template](images/sam_deployment_step_2.png)
 
-Confirm that the Successfully created/updated stack message is shown.
+7. Confirm that the Successfully created/updated stack message is shown.
 
 ![Building and deploying SAM template](images/sam_deployment_step_3.png)
 
-You are now ready to test the solution.
+8. You are now ready to test the solution.
 
 ### Cleaning up ###
 To avoid incurring future charges, delete the CloudFormation stacks that have been provisioned in the AWS account. This can be achieved using:
