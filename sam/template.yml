@@ -16,7 +16,7 @@ Parameters:
     Default: device-position/lambda
     ConstraintDescription: Valid S3 bucket prefix.
   FirehoseS3Prefix:
-    Description: Output bucket prefix for Kinesis Data Firehose to save device positions (without leading or trailing /).
+    Description: Output bucket prefix for Amazon Data Firehose to save device positions (without leading or trailing /).
     Type: String
     Default: device-position/firehose
     ConstraintDescription: Valid S3 bucket prefix.
