@@ -199,6 +199,19 @@ Resources:
                   - firehose:PutRecords
                 Resource:
                   - Fn::Sub: ${ProcessDevicePositionFirehose.Arn}
+  ProcessDevicePositionFirehoseLogStream:
+    Type: AWS::Logs::LogStream
+    Properties:
+      LogGroupName:
+        Ref: ProcessDevicePositionFirehoseLogGroup
+      LogStreamName:
+        Fn::Sub: ProcessDevicePositionFirehose-${AWS::StackName}
+  ProcessDevicePositionFirehoseLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName:
+        Fn::Sub: /aws/firehose/ProcessDevicePositionFirehose-${AWS::StackName}
+      RetentionInDays: 7
   ProcessDevicePositionFirehose:
     Type: AWS::KinesisFirehose::DeliveryStream
     Properties:
@@ -208,6 +221,12 @@ Resources:
       DeliveryStreamEncryptionConfigurationInput:
         KeyType: AWS_OWNED_CMK
       ExtendedS3DestinationConfiguration:
+        CloudWatchLoggingOptions:
+          Enabled: true
+          LogGroupName:
+            Ref: ProcessDevicePositionFirehoseLogGroup
+          LogStreamName:
+            Ref: ProcessDevicePositionFirehoseLogStream
         BucketARN:
           Fn::Sub: ${ProcessDevicePositionS3Bucket.Arn}
         Prefix:
@@ -263,6 +282,12 @@ Resources:
                 Resource:
                   - Fn::Sub: ${ProcessDevicePositionS3Bucket.Arn}/${FirehoseS3Prefix}/*
                   - Fn::Sub: ${ProcessDevicePositionS3Bucket.Arn}/${FirehoseS3Prefix}-errors/*
+              - Effect: 'Allow'
+                Action:
+                  - 'logs:CreateLogStream'
+                  - 'logs:PutLogEvents'
+                Resource:
+                  Fn::Sub: 'arn:${AWS::Partition}:logs:${AWS::Region}:${AWS::AccountId}:log-group:/aws/firehose/ProcessDevicePositionFirehose-${AWS::StackName}:*'
   # Data generation / simulation resources.
   GenerateDevicePositionTable:
     Type: AWS::DynamoDB::Table
