@@ -24,7 +24,7 @@ For this walkthrough, you should have the following prerequisites in place:
 
 * An AWS account
 * IAM permissions to deploy the AWS resources using AWS Serverless Application Model (AWS SAM)
-* Local installation of [AWS SAM Command Line Interface (CLI)](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html)
+* Local installation of the latest version of [AWS SAM Command Line Interface (CLI)](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html)
 * Local installation of [Python 3.11](https://www.python.org/downloads/release/python-3110/) and [pip](https://pypi.org/project/pip/)
 
 ### Deploying the solution ###
