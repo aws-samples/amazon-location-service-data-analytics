@@ -27,6 +27,22 @@ Parameters:
     MinValue: 15
 Resources:
   # AWS resources for ingesting, processing and storing location data.
+  ProcessDevicePositionS3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        !Ref ProcessDevicePositionS3Bucket
+      PolicyDocument:
+        Statement:
+        - Action: 's3:*'
+          Effect: Deny
+          Resource:
+            - !Sub arn:aws:s3:::${ProcessDevicePositionS3Bucket}
+            - !Sub arn:aws:s3:::${ProcessDevicePositionS3Bucket}/*
+          Condition:
+            Bool:
+              aws:SecureTransport: false
+          Principal: '*'
   ProcessDevicePositionS3Bucket:
     Type: AWS::S3::Bucket
     Properties:
