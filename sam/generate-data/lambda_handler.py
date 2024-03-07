@@ -88,11 +88,11 @@ def lambda_handler(event, context):
                 )
         # Randomise location, using offset and random.triangular for variance.
         random_long = round(
-            (random.triangular(-1000, 0, 1000) / 10000) + base_long,
+            (random.triangular(-1000, 1000, 0) / 10000) + base_long,
             4
         )
         random_lat = round(
-                (random.triangular(-1000, 0, 1000) / 10000) + base_lat,
+                (random.triangular(-1000, 1000, 0) / 10000) + base_lat,
                 4
             )
         sample_time = now.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
