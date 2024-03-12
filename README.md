@@ -2,11 +2,11 @@
 
 ## Overview ##
 
-Many organizations around the world rely on the use of physical assets, such as vehicles, to deliver a service to the end customer. By tracking these assets in real-time, and storing the results, owners can derive valuable insights on how they are being utilized to continuously deliver business improvements, and to plan for future changes. For example, a delivery company operating a fleet of vehicles will need to ascertain what the impact might be from local policy changes outside of their control, such as the announced expansion of an [Ultra Low Emission Zone (ULEZ)](https://en.wikipedia.org/wiki/Ultra_Low_Emission_Zone). By combining historical vehicle location data with information from other sources, the organization can devise empirical approaches to drive better decision making. For example, this information can be used by the company’s procurement team to make decisions about which vehicles to prioritize for replacement before policy changes come into force.
+Many organizations around the world rely on the use of physical assets, such as vehicles, to deliver a service to their end-customers. By tracking these assets in real time and storing the results, asset owners can derive valuable insights on how their assets are being used to continuously deliver business improvements and plan for future changes. For example, a delivery company operating a fleet of vehicles may need to ascertain the impact from local policy changes outside of their control, such as the announced expansion of an [Ultra-Low Emission Zone (ULEZ)](https://en.wikipedia.org/wiki/Ultra_Low_Emission_Zone). By combining historical vehicle location data with information from other sources, the company can devise empirical approaches for better decision-making. For example, the company’s procurement team can use this information to make decisions about which vehicles to prioritize for replacement before policy changes go into effect.
 
-Using [Amazon Location Service support for publishing device position updates to Amazon EventBridge](https://aws.amazon.com/about-aws/whats-new/2023/07/amazon-location-service-device-updates-eventbridge/), developers can build a near real-time data pipeline that stores locations of tracked assets in Amazon S3. Additionally, using AWS Lambda, incoming location data can be enriched using data from other sources, such as an Amazon DynamoDB table containing vehicle maintenance details. It is then possible for a data analyst to use [Athena’s geospatial querying capabilities](https://docs.aws.amazon.com/athena/latest/ug/querying-geospatial-data.html) to gain insights, such as the number of days their vehicles have operated in the proposed boundaries of an expanded ULEZ. Since vehicles that do not meet ULEZ emissions standards are subjected to a daily charge to operate within the zone, location data, alongside maintenance data such as age of vehicle, current mileage and whether a particular vehicle meets current emissions standards, can be used to estimate the amount the company would have spent on daily fees.
+Developers can use the support in [Amazon Location Service](https://aws.amazon.com/location/) for [publishing device position updates to Amazon EventBridge](https://aws.amazon.com/about-aws/whats-new/2023/07/amazon-location-service-device-updates-eventbridge/) to build a near-real-time data pipeline that stores locations of tracked assets in [Amazon Simple Storage Service (Amazon S3)](https://aws.amazon.com/s3/). Additionally, you can use [AWS Lambda](https://aws.amazon.com/lambda/) to enrich incoming location data with data from other sources, such as an [Amazon DynamoDB](https://aws.amazon.com/dynamodb/) table containing vehicle maintenance details. Then a data analyst can use the [geospatial querying capabilities](https://docs.aws.amazon.com/athena/latest/ug/querying-geospatial-data.html) of [Amazon Athena](https://aws.amazon.com/athena/) to gain insights, such as the number of days their vehicles have operated in the proposed boundaries of an expanded ULEZ. Because vehicles that do not meet ULEZ emissions standards are subjected to a daily charge to operate within the zone, you can use the location data, along with maintenance data such as age of the vehicle, current mileage, and current emissions standards to estimate the amount the company would have to spend on daily fees.
 
-This post shows you how you can use Amazon Location, EventBridge, Lambda, Amazon Data Firehose, and S3 to build a location-aware data pipeline, and use this data to drive meaningful insights using AWS Glue and Athena.
+This post shows how you can use Amazon Location, EventBridge, Lambda, [Amazon Data Firehose](https://aws.amazon.com/kinesis/data-firehose/), and Amazon S3 to build a location-aware data pipeline, and use this data to drive meaningful insights using [AWS Glue](https://aws.amazon.com/glue/) and Athena.
 
 ![Solution architecture](images/architecture_diagram_v0.5.png)
 
@@ -20,10 +20,10 @@ This approach is fully documented in the following blog post:
 
 ### Prerequisites ###
 
-For this walkthrough, you should have the following prerequisites in place:
+For this walkthrough, you will need the following prerequisites in place:
 
 * An AWS account
-* IAM permissions to deploy the AWS resources using AWS Serverless Application Model (AWS SAM)
+* IAM permissions to deploy the AWS resources using [AWS Serverless Application Model (AWS SAM)](https://aws.amazon.com/serverless/sam/)
 * Local installation of the latest version of [AWS SAM Command Line Interface (CLI)](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html)
 * Local installation of [Python 3.11](https://www.python.org/downloads/release/python-3110/) and [pip](https://pypi.org/project/pip/)
 
@@ -40,7 +40,7 @@ For this walkthrough, you should have the following prerequisites in place:
 git clone https://github.com/aws-samples/amazon-location-service-data-analytics
 ```
 
-2. Navigate to the sam directory.
+2. Navigate to the `sam` directory.
 
 ```
 cd sam
