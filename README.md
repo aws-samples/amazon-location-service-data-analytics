@@ -12,7 +12,7 @@ This post shows how you can use Amazon Location, EventBridge, Lambda, [Amazon Da
 
 ## AWS Blog post ##
 
-This approach is fully documented in the following blog post:
+This approach is documented in the following AWS blog post:
 
 [Gain insights from historical location data using Amazon Location Service and AWS analytics services](https://aws.amazon.com/blogs/big-data/gain-insights-from-historical-location-data-using-amazon-location-service-and-aws-analytics-services/)
 
@@ -23,14 +23,14 @@ This approach is fully documented in the following blog post:
 For this walkthrough, you will need the following prerequisites in place:
 
 * An AWS account
-* IAM permissions to deploy the AWS resources using [AWS Serverless Application Model (AWS SAM)](https://aws.amazon.com/serverless/sam/)
+* [AWS Identity and Access Management (IAM)](https://aws.amazon.com/iam/) permissions to deploy the AWS resources using [AWS Serverless Application Model (AWS SAM)](https://aws.amazon.com/serverless/sam/)
 * Local installation of the latest version of [AWS SAM Command Line Interface (CLI)](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html)
 * Local installation of [Python 3.11](https://www.python.org/downloads/release/python-3110/) and [pip](https://pypi.org/project/pip/)
 
 ### Deploying the solution ###
 
-* Follow the steps in the [official documentation](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html) to install the latest release of the AWS SAM CLI for your operating system.
-* Once successfully installed, run `sam --version` to return the AWS SAM CLI version.
+* Follow the steps in the [official documentation](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/install-sam-cli.html) to install the latest release of the AWS SAM CLI for your operating system
+* Once successfully installed, run `sam --version` to return the AWS SAM CLI version
 
 > Note: The AWS SAM CLI requires appropriate permissions to provision resources in the chosen AWS account. Ensure that [access key and secret access keys](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/prerequisites.html) have been created using IAM, and that aws configure has been used to register them locally on your machine.
 
@@ -72,7 +72,7 @@ Parameter FirehoseS3Prefix [device-position/firehose]:
 Parameter SimulationIntervalMinutes [15]:
 ```
 
-Options are explained below:
+Deployment options are explained below:
 
 | Options                              | Explanation                                                                                                                                                                                                                  | Default                        | Further information                                                                                                                              |
 |--------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
