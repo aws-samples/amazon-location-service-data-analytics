@@ -14,7 +14,7 @@ This post shows you how you can use Amazon Location, EventBridge, Lambda, Amazon
 
 This approach is fully documented in the following blog post:
 
-`TBC`
+[Gain insights from historical location data using Amazon Location Service and AWS analytics services](https://aws.amazon.com/blogs/big-data/gain-insights-from-historical-location-data-using-amazon-location-service-and-aws-analytics-services/)
 
 ## Walkthrough ##
 
